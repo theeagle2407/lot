@@ -1,0 +1,108 @@
+pragma language_version 0.28.0;
+
+import CompactStandardLibrary;
+
+// LOT Build 01 — confidential batch prequalification.
+// V1 trust model: one pre-authorized inspector and one policy operator.
+// All ledger values below are PUBLIC. Measurements and opening salts are never stored here.
+
+export sealed ledger inspectorKeyHash: Bytes<32>;
+export sealed ledger policyAdminKeyHash: Bytes<32>;
+
+export ledger inspections: Map<Bytes<32>, Bytes<32>>;
+export ledger minimumStrength: Map<Bytes<32>, Uint<64>>;
+export ledger maximumDefectsBps: Map<Bytes<32>, Uint<64>>;
+export ledger clearances: Map<Bytes<32>, Boolean>;
+
+// Locally supplied secrets; the circuits MUST verify them.
+witness localInspectorSecret(): Bytes<32>;
+witness localPolicyAdminSecret(): Bytes<32>;
+
+constructor(inspectorSecret: Bytes<32>, policyAdminSecret: Bytes<32>) {
+  inspectorKeyHash = disclose(persistentHash<Vector<2, Bytes<32>>>([
+    pad(32, "LOT_INSPECTOR_V1"), inspectorSecret
+  ]));
+  policyAdminKeyHash = disclose(persistentHash<Vector<2, Bytes<32>>>([
+    pad(32, "LOT_POLICY_ADMIN_V1"), policyAdminSecret
+  ]));
+}
+
+// The inspector anchors an immutable, salted commitment to a batch's test values.
+// strength is an integer MPa reading; defectBps is an integer (10000 = 100%).
+export circuit registerInspection(
+  batchId: Bytes<32>,
+  strength: Uint<64>,
+  defectBps: Uint<64>,
+  salt: Bytes<32>
+): [] {
+  const inspectorSecret = localInspectorSecret();
+  assert(persistentHash<Vector<2, Bytes<32>>>([
+    pad(32, "LOT_INSPECTOR_V1"), inspectorSecret
+  ]) == inspectorKeyHash, "Unauthorized inspector");
+
+  assert(strength > 0, "Strength must be positive");
+  assert(defectBps <= 10000, "Defect rate exceeds 100 percent");
+
+  const key = disclose(batchId);
+  assert(!inspections.member(key), "Inspection already exists for batch");
+
+  // A FRESH CSPRNG 32-byte salt is required for each individual report.
+  // The manufacturer must receive (strength, defectBps, salt) securely off chain.
+  // No plain measurement, salt, or unsalted hash appears on chain.
+  inspections.insert(
+    key,
+    persistentCommit<Vector<2, Uint<64>>>([strength, defectBps], salt)
+  );
+}
+
+// Pilot configuration: public buyer policies are recorded by an authorized operator.
+// A later version will support buyers registering independently authenticated policies.
+export circuit registerPolicy(
+  policyId: Bytes<32>,
+  minStrength: Uint<64>,
+  maxDefectsBps: Uint<64>
+): [] {
+  const adminSecret = localPolicyAdminSecret();
+  assert(persistentHash<Vector<2, Bytes<32>>>([
+    pad(32, "LOT_POLICY_ADMIN_V1"), adminSecret
+  ]) == policyAdminKeyHash, "Unauthorized policy operator");
+
+  assert(minStrength > 0, "Minimum strength must be positive");
+  assert(maxDefectsBps <= 10000, "Max defects exceeds 100 percent");
+
+  const key = disclose(policyId);
+  assert(!minimumStrength.member(key), "Policy already exists");
+  minimumStrength.insert(key, disclose(minStrength));
+  maximumDefectsBps.insert(key, disclose(maxDefectsBps));
+}
+
+// The manufacturer proves that the INSPECTOR'S committed readings meet a PUBLIC policy.
+// A valid clearance becomes public; the readings remain private.
+// A failed attempt records nothing (do not confuse "not proven" with "failed").
+export circuit proveClearance(
+  batchId: Bytes<32>,
+  policyId: Bytes<32>,
+  strength: Uint<64>,
+  defectBps: Uint<64>,
+  salt: Bytes<32>
+): [] {
+  const batch = disclose(batchId);
+  const policy = disclose(policyId);
+  assert(inspections.member(batch), "Unknown batch");
+  assert(minimumStrength.member(policy), "Unknown buyer policy");
+
+  assert(
+    inspections.lookup(batch) == persistentCommit<Vector<2, Uint<64>>>(
+      [strength, defectBps], salt
+    ),
+    "Measurements do not match inspector's commitment"
+  );
+  assert(strength >= minimumStrength.lookup(policy), "Strength requirement not met");
+  assert(defectBps <= maximumDefectsBps.lookup(policy), "Defect threshold exceeded");
+
+  const clearanceKey = disclose(persistentHash<Vector<2, Bytes<32>>>([
+    batchId, policyId
+  ]));
+  assert(!clearances.member(clearanceKey), "Clearance already exists");
+  clearances.insert(clearanceKey, true);
+}

@@ -1,0 +1,15 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {createInspection,evaluatePolicy,evaluateAll,buyerProjection,downloadProjection,validateReport,validatePolicy} from '../src/logic.js';
+const report={id:'LOT-001',material:'Steel',inspector:'Test Lab',date:'21 Nov 2026',strength:541,defectRate:.8,secretSalt:'DO NOT EXPOSE'};
+const policies=[{id:'A',buyer:'A',minimumStrength:500,maximumDefects:1.5},{id:'B',buyer:'B',minimumStrength:550,maximumDefects:.6}];
+test('qualifies when both criteria pass',()=>assert.equal(evaluatePolicy(report,policies[0]).passed,true));
+test('fails policy with stricter criteria',()=>assert.equal(evaluatePolicy(report,policies[1]).passed,false));
+test('comparisons are inclusive at policy boundaries',()=>assert.equal(evaluatePolicy({strength:500,defectRate:1.5},policies[0]).passed,true));
+test('rejects invalid negative readings',()=>assert.throws(()=>validateReport({strength:-1,defectRate:0}),/nonnegative/));
+test('rejects impossible defect rates',()=>assert.throws(()=>validateReport({strength:1,defectRate:101}),/100/));
+test('rejects invalid policy',()=>assert.throws(()=>validatePolicy({minimumStrength:500,maximumDefects:101}),/100/));
+test('rejects empty reports and malformed ID',()=>assert.throws(()=>createInspection({batchId:'!@!',material:'Steel',strength:2,defectRate:1}),/batch ID/));
+test('applies independent policies to one inspection',()=>assert.deepEqual(evaluateAll(report,policies).map(x=>x.passed),[true,false]));
+test('buyer projection excludes private measurements and salts',()=>{const text=JSON.stringify(buyerProjection(report,policies));for(const v of ['541','0.8','secretSalt','DO NOT EXPOSE'])assert.ok(!text.includes(v),`leaked ${v}`)});
+test('export is clearly a demo and does not leak readings',()=>{const json=downloadProjection(report,policies);assert.match(json,/DEMONSTRATION ONLY/); assert.ok(!json.includes('541'));assert.ok(!json.includes('DO NOT EXPOSE'));});

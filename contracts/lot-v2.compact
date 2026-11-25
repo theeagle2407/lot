@@ -1,0 +1,106 @@
+pragma language_version 0.28.0;
+
+import CompactStandardLibrary;
+
+// LOT V2 - EXPERIMENTAL signed-commitment contract.
+// DO NOT deploy this until it compiles, simulator-negative tests pass,
+// and independent key enrollment has been reviewed.
+// This is intentionally a NEW contract, not a replacement for V1.
+
+// A public verification key selected by the contract deployer.
+// It is not proof of laboratory accreditation by itself.
+export sealed ledger inspectorVerificationKey: JubjubPoint;
+export sealed ledger policyAdminKeyHash: Bytes<32>;
+
+export ledger inspections: Map<Bytes<32>, Bytes<32>>;
+export ledger minimumStrength: Map<Bytes<32>, Uint<64>>;
+export ledger maximumDefectsBps: Map<Bytes<32>, Uint<64>>;
+export ledger clearances: Map<Bytes<32>, Boolean>;
+
+witness localPolicyAdminSecret(): Bytes<32>;
+
+constructor(inspectorKey: JubjubPoint, policyAdminSecret: Bytes<32>) {
+  inspectorVerificationKey = disclose(inspectorKey);
+  policyAdminKeyHash = disclose(persistentHash<Vector<2, Bytes<32>>>([
+    pad(32, "LOT_POLICY_ADMIN_V2"), policyAdminSecret
+  ]));
+}
+
+// The signed message is a digest binding batch ID + confidential readings
+// through a fresh salt; it is signed only AFTER the inspector checks the report.
+// Domain separation prevents accidental reuse of signatures in other products.
+export pure circuit reportSignatureMessage(
+  batchId: Bytes<32>,
+  strength: Uint<64>,
+  defectBps: Uint<64>,
+  salt: Bytes<32>
+): Bytes<32> {
+  const commitment = persistentCommit<Vector<2, Uint<64>>>(
+    [strength, defectBps], salt
+  );
+  return persistentHash<Vector<3, Bytes<32>>>([
+    pad(32, "LOT_INSP_SIGN_V2"), batchId, commitment
+  ]);
+}
+
+// Anyone may relay this transaction; only someone holding a VALID signature
+// from the enrolled inspector can register the underlying measurements.
+// The public ledger never stores the readings or the salt.
+export circuit registerInspectionSigned(
+  batchId: Bytes<32>,
+  strength: Uint<64>,
+  defectBps: Uint<64>,
+  salt: Bytes<32>,
+  inspectorSignature: JubjubSchnorrSignature
+): [] {
+  assert(strength > 0, "Strength must be positive");
+  assert(defectBps <= 10000, "Invalid defect rate");
+  const key = disclose(batchId);
+  assert(!inspections.member(key), "Inspection already registered");
+
+  const digest = reportSignatureMessage(batchId, strength, defectBps, salt);
+  assert(jubjubSchnorrVerify<1>(
+    [degradeToTransient(digest)],
+    inspectorSignature,
+    inspectorVerificationKey
+  ), "Invalid inspector signature");
+
+  inspections.insert(key, persistentCommit<Vector<2, Uint<64>>>(
+    [strength, defectBps], salt
+  ));
+}
+
+export circuit registerPolicy(
+  policyId: Bytes<32>, minStrength: Uint<64>, maxDefectsBps: Uint<64>
+): [] {
+  const admin = localPolicyAdminSecret();
+  assert(persistentHash<Vector<2, Bytes<32>>>([
+    pad(32, "LOT_POLICY_ADMIN_V2"), admin
+  ]) == policyAdminKeyHash, "Unauthorized policy operator");
+  assert(minStrength > 0, "Invalid strength threshold");
+  assert(maxDefectsBps <= 10000, "Invalid defect threshold");
+  const key = disclose(policyId);
+  assert(!minimumStrength.member(key), "Policy already exists");
+  minimumStrength.insert(key, disclose(minStrength));
+  maximumDefectsBps.insert(key, disclose(maxDefectsBps));
+}
+
+export circuit proveClearance(
+  batchId: Bytes<32>, policyId: Bytes<32>,
+  strength: Uint<64>, defectBps: Uint<64>, salt: Bytes<32>
+): [] {
+  const batch = disclose(batchId);
+  const policy = disclose(policyId);
+  assert(inspections.member(batch), "Unknown batch");
+  assert(minimumStrength.member(policy), "Unknown policy");
+  assert(inspections.lookup(batch) == persistentCommit<Vector<2, Uint<64>>>(
+    [strength, defectBps], salt
+  ), "Invalid report opening");
+  assert(strength >= minimumStrength.lookup(policy), "Strength requirement not met");
+  assert(defectBps <= maximumDefectsBps.lookup(policy), "Defects requirement not met");
+  const clearanceKey = disclose(persistentHash<Vector<2, Bytes<32>>>([
+    batchId, policyId
+  ]));
+  assert(!clearances.member(clearanceKey), "Clearance already issued");
+  clearances.insert(clearanceKey, true);
+}

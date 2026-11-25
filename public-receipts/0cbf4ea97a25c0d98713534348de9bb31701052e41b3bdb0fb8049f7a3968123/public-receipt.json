@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "network": "preprod",
+  "batchId": "LOT-0002",
+  "batchKey": "0cbf4ea97a25c0d98713534348de9bb31701052e41b3bdb0fb8049f7a3968123",
+  "policyId": "B-03",
+  "policyKey": "767d3a53f6a4a4f6bc89f0abb5b37f5ee0f00142df944f112d178f835e4eec11",
+  "clearanceKey": "2647ec8f8ab67ca310da60cd4c244f1826c4da97855dc7897fbf5a1a56d4bf87",
+  "minStrength": 280,
+  "maxDefectsBps": 80,
+  "contractAddress": "02129d89467c1e5c901d2ebc42bc2626995860bfb20a4ae1cd4ee5136cf872e0",
+  "steps": {
+    "deploy": {
+      "status": "confirmed-by-ledger",
+      "submittedIdentifier": "002b78baa689d668df7af1202a9e45f3afd8b351162ff41115cb37f0d07ee95e53"
+    },
+    "inspection": {
+      "status": "confirmed-by-ledger",
+      "submittedIdentifier": "003fce9bf131549856508a0ea4bb829b02c25af5b741af60ff5e0e548b9f38d38a"
+    },
+    "policy": {
+      "status": "confirmed-by-ledger",
+      "submittedIdentifier": "0029cfe941b70feade3d2cb2bd8a4d4528e2aa68c2383591f1cf885dae01cb9019"
+    },
+    "clearance": {
+      "status": "confirmed-by-ledger",
+      "submittedIdentifier": "00efb39fd71dc4b0a31e25a355c4f8fe31f502ded16afa2f486e0bb0605adf27d3"
+    }
+  }
+}

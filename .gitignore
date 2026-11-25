@@ -1,0 +1,31 @@
+# Dependencies / output
+node_modules/
+dist/
+dist-preprod/
+coverage/
+*.log
+*.zip
+*.tar.gz
+.DS_Store
+._*
+# Local secrets and state
+.env
+.env.*
+*.env
+*.pem
+*.key
+*.p12
+*.pfx
+*.sqlite*
+*.db
+midnight-level-db/
+.lot/
+wallet-sync-ledger9/
+private-reports/
+users.json
+onboarding-v1.json
+checkpoint*.json
+operator.env
+verifier.env
+gateway.env
+# Keep contracts/managed/** and public-receipts/** for reproducibility.

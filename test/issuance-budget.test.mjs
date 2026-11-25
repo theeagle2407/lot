@@ -1,0 +1,9 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {mkdtempSync,rmSync,mkdirSync,writeFileSync} from 'node:fs';import {tmpdir} from 'node:os';import {join} from 'node:path';
+import {createIssuanceBudget,issuanceAccounts} from '../scripts/lot-issuance-budget.mjs';
+const key=n=>n.toString(16).padStart(64,'0');
+function setup(t){const root=mkdtempSync(join(tmpdir(),'lot-budget-'));t.after(()=>rmSync(root,{recursive:true,force:true}));return join(root,'budget');}
+test('explicit allowlist rejects duplicates and malformed identities',()=>{assert.deepEqual([...issuanceAccounts('eagle,reviewer01')],['eagle','reviewer01']);for(const v of ['eagle,eagle','eagle,','*','eagle, other'])assert.throws(()=>issuanceAccounts(v));});
+test('persistent total and per-account limits survive restart',t=>{const dir=setup(t),cfg={total:2,perAccount:1};const a=createIssuanceBudget(dir,cfg);a.reserve('eagle',key(1));const b=createIssuanceBudget(dir,cfg);assert.equal(b.has(key(1)),true);assert.equal(b.remaining('eagle'),0);assert.throws(()=>b.reserve('eagle',key(2)),/budget reached/);b.reserve('reviewer01',key(3));assert.equal(createIssuanceBudget(dir,cfg).remaining('reviewer02'),0);assert.throws(()=>b.reserve('reviewer02',key(4)),/budget reached/);});
+test('reserved receipt cannot be issued again even under another account',t=>{const dir=setup(t);createIssuanceBudget(dir).reserve('eagle',key(1));assert.throws(()=>createIssuanceBudget(dir).reserve('reviewer01',key(1)),/reconcile/);});
+test('corrupt reservation and stale lock fail closed',t=>{const dir=setup(t);const a=createIssuanceBudget(dir);a.reserve('eagle',key(1));mkdirSync(join(dir,'.reserve-lock'));assert.throws(()=>a.reserve('eagle',key(2)),/locked/);writeFileSync(join(dir,key(1)+'.json'),'broken');assert.throws(()=>a.remaining('eagle'));});

@@ -1,0 +1,4 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';import {percentToBps,batchStatus} from '../src/batch-presentation.js';
+test('decimal percentages preserve exact on-chain basis points',()=>{for(const [p,b] of [['0',0],['0.01',1],['0.50',50],['0.8',80],['0.75',75],['1',100],['99.99',9999],['100',10000]])assert.equal(percentToBps(p),b);});
+test('invalid percentages rejected',()=>{for(const p of ['','-1','100.01','0.001','1e2','Infinity','NaN','1,2'])assert.throws(()=>percentToBps(p));});
+test('a signed report or local eligibility never implies issuance',()=>{assert.equal(batchStatus({status:'signed',preparedPolicy:{eligible:true}}).label,'Report signed');assert.equal(batchStatus({status:'signed',issuance:'running'}).label,'Generating clearance');assert.equal(batchStatus({status:'signed',issuance:'reconcile'}).label,'Review required');assert.equal(batchStatus({status:'signed'},true).label,'Clearance issued');});

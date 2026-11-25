@@ -1,0 +1,18 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {findAuditableSession, publicAuditResult} from '../scripts/lot-v2-browser-audit-core.mjs';
+import {isCurrentLocalClearance} from '../src/v2Audit.js';
+const tx=x=>'00'+x.repeat(64);
+const contract='a'.repeat(64), inspectionTx=tx('b');
+const record=(id,policyId,min,max,policyTx,clearanceTx,override={})=>({id,savedAt:'2026-11-21T15:00:00.000Z',receipt:{network:'local',testData:true,result:'qualified',batchId:'LOT-3001',policyId,policy:{minStrength:min,maxDefectsBps:max},contractAddress:contract,inspectionTx,policyTx,clearanceTx,...override}});
+const records=[record('0123456789abcdef','B-01',530,100,tx('c'),tx('d')),record('abcdef0123456789','B-02',550,90,tx('e'),tx('f'))];
+const request={batchId:'LOT-3001',contractAddress:contract,inspectionTx};
+const saved={...request,reportDigest:'d'.repeat(64)};
+const session=findAuditableSession(records,saved,request);
+const check={ok:true,batchId:'LOT-3001',contractAddress:contract,clearanceCount:2,policies:['B-01','B-02']};
+test('one current V2 inspection groups both archived buyer clearances',()=>{assert.equal(session.clearanceCount,2);assert.deepEqual(session.clearances.map(x=>x.policyId),['B-01','B-02']);});
+test('archived V1 and unrelated deployments cannot be passed off as current V2 session',()=>{assert.equal(findAuditableSession(records,{...saved,contractAddress:'f'.repeat(64)},request),null);assert.equal(findAuditableSession(records,saved,{...request,inspectionTx:tx('0')}),null);});
+test('browser receives only allowlisted public V2 identifiers',()=>{const result=publicAuditResult(session,check);assert.equal(result.status,'verified');assert.equal(result.clearances.length,2);const json=JSON.stringify(result);for(const secret of ['reportDigest','private','salt','seed','strengthReading','policyAdminSecret'])assert.equal(json.includes(secret),false);});
+test('unverified ledger result cannot produce verified browser status',()=>{assert.equal(publicAuditResult(session,{...check,ok:false}).status,'unverified');assert.equal(publicAuditResult(session,{...check,clearanceCount:1}).status,'unverified');});
+test('frontend requires matching exact buyer thresholds and both transaction IDs',()=>{const result=publicAuditResult(session,check), buyer={batchId:'LOT-3001',contractAddress:contract,inspectionTx,policyId:'B-02',minStrength:550,maxDefectsBps:90,policyTx:tx('e'),clearanceTx:tx('f')};assert.ok(isCurrentLocalClearance(result,buyer));assert.ok(!isCurrentLocalClearance(result,{...buyer,policyTx:tx('0')}));assert.ok(!isCurrentLocalClearance(result,{...buyer,maxDefectsBps:91}));assert.ok(!isCurrentLocalClearance({status:'unavailable'},buyer));});
+test('saved receipt does not equal independent on-chain verification',()=>{assert.equal(isCurrentLocalClearance({status:'unverified'},session.clearances[0]),false);});

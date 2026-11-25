@@ -1,0 +1,99 @@
+{
+  "manifest-version": "1",
+  "compiler-version": "0.36.1",
+  "compiler-commit": "7fa3a117c5e7efe9d2c51da04263e5f0b3509144",
+  "language-version": "0.28.0",
+  "runtime-version": "0.21.0",
+  "compiler": {
+    "type": "directory",
+    "contract-info.json": {
+      "type": "file",
+      "size": 4439,
+      "hash": "475713677f95b9e73abf9adfd68ffdcd8471972493b174774c2fe6a46a2c8d14"
+    }
+  },
+  "contract": {
+    "type": "directory",
+    "index.d.ts": {
+      "type": "file",
+      "size": 4681,
+      "hash": "a07fcc96c0c252fac7b2a803e2d84947c99a2213e69b13695e65fac424bfe593"
+    },
+    "index.js": {
+      "type": "file",
+      "size": 99770,
+      "hash": "b1395880a0196b6011bb4f9662142addaae81548df368113c4ae4eb5add295b4"
+    },
+    "index.js.map": {
+      "type": "file",
+      "size": 3371,
+      "hash": "e0263dfad4bdc9b716704761c547f17c4203e70008a4a0434d8705aeddf71e71"
+    }
+  },
+  "zkir": {
+    "type": "directory",
+    "proveClearance.bzkir": {
+      "type": "file",
+      "size": 1785,
+      "hash": "db8bea8516bcfa58b5cee6c503e07cd3cece1928fd70df2b4951e6e93eb58f29"
+    },
+    "proveClearance.zkir": {
+      "type": "file",
+      "size": 6183,
+      "hash": "6dcf5073af1926cd71dd106a9f5181551d18b695aa635b680655b698486b176f"
+    },
+    "registerInspection.bzkir": {
+      "type": "file",
+      "size": 1130,
+      "hash": "6b7dc45b288d760fe29db132918437ece133445bc0f33c79bd435b714bb3e041"
+    },
+    "registerInspection.zkir": {
+      "type": "file",
+      "size": 4156,
+      "hash": "4da674f8c178a0fe48b53d48b13f6010a9477e6d8dd92648f7557abeedb1f6a8"
+    },
+    "registerPolicy.bzkir": {
+      "type": "file",
+      "size": 1170,
+      "hash": "9a7f98c05e3c30354793e85029120d1b2b35187bf9ba442d3f4d5817530c6a20"
+    },
+    "registerPolicy.zkir": {
+      "type": "file",
+      "size": 3936,
+      "hash": "656eef2cfd427fa8b1b746fc90439a66618a124ab290d3fdb9bb8523edf1544f"
+    }
+  },
+  "keys": {
+    "type": "directory",
+    "proveClearance.prover": {
+      "type": "file",
+      "size": 11278345,
+      "hash": "8c4c56f49f748abf9d6c133d1ac139061c7be45a1daa5a7b9df7c412b1666edd"
+    },
+    "proveClearance.verifier": {
+      "type": "file",
+      "size": 2121,
+      "hash": "64ce7f8177d5dfd65df2a685feebfdd22067bb579683ae2b927c5ce01cb78f1b"
+    },
+    "registerInspection.prover": {
+      "type": "file",
+      "size": 11277690,
+      "hash": "567fd8942394697688d461e2d6fb5f03040858179b33d6dc39a4d707330c1b86"
+    },
+    "registerInspection.verifier": {
+      "type": "file",
+      "size": 2121,
+      "hash": "95712845c25b1470098a50499922b19cfcc08f3f1de43e011948c6f1580dcb59"
+    },
+    "registerPolicy.prover": {
+      "type": "file",
+      "size": 11277730,
+      "hash": "6b61080c3fb492c9c6910ceb3de63abaa519d9c2809d0be5a416b1da2d961ea9"
+    },
+    "registerPolicy.verifier": {
+      "type": "file",
+      "size": 2121,
+      "hash": "cced0e6b01424cf6146614b7bd049b9d910c868281b840382b6787b86dcfbf56"
+    }
+  }
+}

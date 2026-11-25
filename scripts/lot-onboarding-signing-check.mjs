@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import {randomBytes} from 'node:crypto';
+import {signInspectionV2,reportSignatureFields,signatureMessageType} from './lot-v2-signing.mjs';
+import {jubjubSchnorrVerify} from '@midnight-ntwrk/compact-runtime';
+const id=new Uint8Array(randomBytes(32)),salt=new Uint8Array(randomBytes(32));
+const scalar=BigInt('0x'+randomBytes(31).toString('hex'))+1n;
+const {signature,inspectorPublicKey}=signInspectionV2(id,600n,70n,salt,scalar);
+assert.equal(jubjubSchnorrVerify(signatureMessageType,reportSignatureFields(id,600n,70n,salt),inspectorPublicKey,signature),true);
+assert.equal(jubjubSchnorrVerify(signatureMessageType,reportSignatureFields(id,601n,70n,salt),inspectorPublicKey,signature),false);
+console.log('PASS: actual Compact V2 signing adapter; altered report rejected. No transaction made.');

@@ -1,0 +1,24 @@
+{
+  "name": "lot-preprod-dust-helper",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "identity": "tsx src/index.ts identity",
+    "register": "tsx src/index.ts register"
+  },
+  "dependencies": {
+    "@midnight-ntwrk/midnight-js-protocol": "5.0.1",
+    "@midnightntwrk/wallet-sdk": "2.0.1",
+    "@scure/bip39": "2.4.0",
+    "rxjs": "7.8.2",
+    "ws": "8.19.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.0",
+    "@types/ws": "^8.18.1",
+    "tsx": "^4.19.0",
+    "typescript": "^5.9.3"
+  }
+}

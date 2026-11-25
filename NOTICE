@@ -1,0 +1,7 @@
+LOT
+
+Midnight Buildathon project.
+
+The files test/lot-official/{config,providers,wallet}.ts contain code from Midnight Foundation's Apache-2.0 licensed midnight-examples / examples/private-party/src. The recorded upstream revision is 7c3b43fcfe35fa65e4e752460819e8ba1b2aba6b (see UPSTREAM_COMMIT.txt). Original copyright and SPDX headers are retained. These files were used/adapted for LOT's test harness. Upstream: https://github.com/midnightntwrk/midnight-examples
+
+Third-party packages retain their respective licenses. Generated Compact artifacts are included for reproducibility. This notice records the attribution visible in the supplied source; upstream NOTICE requirements should be checked against the original revision before publication.
